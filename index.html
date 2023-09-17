@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Chat</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="chat-container">
+        <div id="chat-header">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQWNe586DxAijGZ33v6vlDEGogGSfbVl5vUUA&usqp=CAU" alt="Chat Icon" id="chat-icon">
+            <h1>Chat Room</h1>
+        </div>
+        <div id="chat">
+            <!-- Messages will be displayed here -->
+        </div>
+        <div id="message-input-container">
+            <input type="text" id="messageInput" placeholder="Enter your message">
+            <button id="sendButton"><img src="https://icons-for-free.com/download-icon-send+icon-1320185654900887696_512.png" alt="Send Icon"></button>
+        </div>
+    </div>
+
+    <script>
+        const socket = new WebSocket('ws://localhost:3000');
+
+        // Send messages to the server
+        document.getElementById('sendButton').addEventListener('click', () => {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim(); // Remove leading/trailing spaces
+
+            if (message !== '') {
+                // Create a new message element for the user's message
+                const userMessageElement = document.createElement('div');
+                userMessageElement.className = 'message';
+                userMessageElement.innerHTML = `
+                    <span class="user-message">You: ${message}</span>
+                    <button class="delete-button" onclick="deleteMessage(this)">Delete</button>
+                `;
+
+                // Append the user's message to the chat container
+                const chat = document.getElementById('chat');
+                chat.appendChild(userMessageElement);
+
+                // Scroll to the bottom to show the latest message
+                chat.scrollTop = chat.scrollHeight;
+
+                // Send the message to the server
+                socket.send(JSON.stringify({ message, sender: 'You' }));
+
+                // Clear the message input field
+                messageInput.value = '';
+            }
+        });
+
+        // Handle incoming messages from the server
+        socket.addEventListener('message', (event) => {
+            const data = JSON.parse(event.data);
+            displayMessage(data.sender, data.message);
+        });
+
+        // Display messages in the chat window
+        function displayMessage(sender, message) {
+            const chat = document.getElementById('chat');
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message';
+            messageElement.innerHTML = `
+                <span>${sender}: ${message}</span>
+                <button class="delete-button" onclick="deleteMessage(this)">Delete</button>
+            `;
+            chat.appendChild(messageElement);
+
+            // Scroll to the bottom to show the latest message
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        // Function to delete a message
+        function deleteMessage(button) {
+            const messageContainer = button.parentElement;
+            messageContainer.remove();
+        }
+    </script>
+</body>
+</html>
